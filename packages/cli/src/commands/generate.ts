@@ -1,17 +1,19 @@
 import { existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import { loadConfig } from "../core/config.js";
 import { sha256File } from "../core/hash.js";
 import {
-  ensureManifest,
   recordArtifact,
   writeManifest,
   GENERATOR_VERSION,
 } from "../core/manifest.js";
+import { formatRunId } from "../core/output-run.js";
+import { withRunOutputDir } from "../core/output-dir.js";
 import { parseRequirement } from "../core/requirement-parser.js";
 import { generateArtifact } from "../artifacts/registry.js";
 import { writeDashboard } from "../dashboard/html.js";
-import type { ArtifactType } from "../types.js";
+import type { AlignxManifest, ArtifactType } from "../types.js";
 import { ALL_ARTIFACTS } from "../types.js";
 
 export interface GenerateOptions {
@@ -40,24 +42,32 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     types = ["acceptance-criteria", "ui-state-matrix"];
   }
 
-  await mkdir(config.outputDir, { recursive: true });
+  const runId = formatRunId(new Date());
+  const runOutputDir = join(config.outputDir, runId);
+  await mkdir(runOutputDir, { recursive: true });
+
+  const runConfig = withRunOutputDir(config, runOutputDir);
 
   const requirement = await parseRequirement(requirementPath);
   const sourceSha256 = await sha256File(requirementPath);
-  let manifest = await ensureManifest(config.outputDir, requirementPath);
 
-  manifest.requirement = {
-    path: requirementPath,
-    sha256: sourceSha256,
-    parsed_version: requirement.frontmatter.version,
+  let manifest: AlignxManifest = {
+    run_id: runId,
+    requirement: {
+      path: requirementPath,
+      sha256: sourceSha256,
+      parsed_version: requirement.frontmatter.version,
+    },
+    artifacts: {},
   };
 
-  console.log(`Generating from ${requirementPath}\n`);
+  console.log(`Generating from ${requirementPath}`);
+  console.log(`Output run: ${runOutputDir}\n`);
 
   for (const type of types) {
     process.stdout.write(`  ${type} … `);
     try {
-      const result = await generateArtifact(type, requirement, config, sourceSha256);
+      const result = await generateArtifact(type, requirement, runConfig, sourceSha256);
       manifest = await recordArtifact(
         manifest,
         type,
@@ -72,10 +82,10 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
     }
   }
 
-  await writeManifest(config.outputDir, manifest);
+  await writeManifest(runOutputDir, manifest);
 
   if (opts.dashboard !== false) {
-    const dashPath = await writeDashboard(config, manifest);
+    const dashPath = await writeDashboard(runConfig, manifest);
     console.log(`\n  dashboard → ${dashPath}`);
   }
 

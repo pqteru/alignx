@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { AlignxManifest, ArtifactType } from "../types.js";
 import { artifactOutputPath } from "../artifacts/registry.js";
+import { effectiveOutputDir } from "../core/output-dir.js";
 import type { AppConfig } from "../types.js";
 import { checkDrift } from "../core/drift.js";
 import { artifactTitles, getLabels, resolveLocale } from "../core/locale.js";
@@ -182,7 +183,7 @@ export async function buildDashboard(
 </head>
 <body>
   <h1>${escapeHtml(L.dashboardTitle)}</h1>
-  <p class="subtitle">${escapeHtml(L.dashboardSubtitle)}</p>
+  <p class="subtitle">${escapeHtml(L.dashboardSubtitle)}${manifest?.run_id ? ` · ${escapeHtml(manifest.run_id)}` : ""}</p>
 
   <div class="req-bar status-${reqStatus}">
     <strong>${L.requirement}</strong>
@@ -207,7 +208,7 @@ export async function writeDashboard(
   manifest: AlignxManifest | null,
 ): Promise<string> {
   const html = await buildDashboard(config, manifest);
-  const outPath = join(config.outputDir, "dashboard", "index.html");
+  const outPath = join(effectiveOutputDir(config), "dashboard", "index.html");
   const { mkdir, writeFile } = await import("node:fs/promises");
   const { dirname } = await import("node:path");
   await mkdir(dirname(outPath), { recursive: true });

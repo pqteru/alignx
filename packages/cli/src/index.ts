@@ -53,14 +53,18 @@ program
   .command("check")
   .description("Detect drift between input/requirement.md and generated artifacts")
   .option("--all", "Check every artifact listed in alignx.config.yaml")
-  .action((opts: { all?: boolean }) => runCheck(!!opts.all));
+  .option("--run <id>", "Run folder id (YYYYMMDD_HHmmss), default: latest")
+  .action((opts: { all?: boolean; run?: string }) =>
+    runCheck({ all: opts.all, run: opts.run }),
+  );
 
 program
   .command("dashboard")
   .description("Build or refresh the HTML dashboard")
   .option("--open", "Open dashboard in default browser")
-  .action(async (opts: { open?: boolean }) => {
-    await runDashboard(!!opts.open);
+  .option("--run <id>", "Run folder id (YYYYMMDD_HHmmss), default: latest")
+  .action(async (opts: { open?: boolean; run?: string }) => {
+    await runDashboard({ open: opts.open, run: opts.run });
   });
 
 program.parse();

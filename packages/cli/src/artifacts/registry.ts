@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { effectiveOutputDir } from "../core/output-dir.js";
 import type { AppConfig, ArtifactType, RequirementModel } from "../types.js";
 import { generateAcceptanceCriteria } from "./acceptance-criteria.js";
 import { generateSprintBacklog } from "./sprint-backlog.js";
@@ -29,7 +30,7 @@ export function artifactOutputPath(config: AppConfig, type: ArtifactType): strin
       : type === "ui-state-matrix"
         ? "ui-state-matrix.md"
         : "sprint-backlog.md";
-  return join(config.outputDir, filename);
+  return join(effectiveOutputDir(config), filename);
 }
 
 export async function generateArtifact(

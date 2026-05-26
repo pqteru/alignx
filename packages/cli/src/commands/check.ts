@@ -2,13 +2,29 @@ import { loadConfig } from "../core/config.js";
 import { checkDrift } from "../core/drift.js";
 import { driftMessages, resolveLocale } from "../core/locale.js";
 import { readManifest } from "../core/manifest.js";
+import { resolveRunOutputDir } from "../core/output-run.js";
 import type { ArtifactType } from "../types.js";
 
-export async function runCheck(all = false): Promise<void> {
-  const config = await loadConfig();
-  const manifest = await readManifest(config.outputDir);
+export interface CheckOptions {
+  all?: boolean;
+  run?: string;
+}
 
-  const types: ArtifactType[] = all
+export async function runCheck(opts: CheckOptions = {}): Promise<void> {
+  const config = await loadConfig();
+  const msg = driftMessages(resolveLocale());
+
+  let runOutputDir: string;
+  try {
+    runOutputDir = await resolveRunOutputDir(config.outputDir, opts.run);
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
+    process.exit(1);
+  }
+
+  const manifest = await readManifest(runOutputDir);
+
+  const types: ArtifactType[] = opts.all
     ? config.artifacts
     : manifest && Object.keys(manifest.artifacts).length > 0
       ? (Object.keys(manifest.artifacts) as ArtifactType[])
@@ -16,7 +32,9 @@ export async function runCheck(all = false): Promise<void> {
 
   const issues = await checkDrift(manifest, config.requirementPath, types);
 
-  const msg = driftMessages(resolveLocale());
+  if (manifest?.run_id) {
+    console.log(`Checking run: ${manifest.run_id}\n`);
+  }
 
   if (issues.length === 0) {
     console.log(msg.checkOk);

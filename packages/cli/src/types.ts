@@ -39,7 +39,10 @@ export interface LlmConfig {
 }
 
 export interface AppConfig {
+  /** Base output directory (e.g. ./output) */
   outputDir: string;
+  /** Timestamped run directory (e.g. ./output/20260526_111111) */
+  runOutputDir?: string;
   requirementPath: string;
   llm: LlmConfig;
   artifacts: ArtifactType[];
@@ -54,6 +57,7 @@ export interface ArtifactManifestEntry {
 }
 
 export interface AlignxManifest {
+  run_id?: string;
   requirement: {
     path: string;
     sha256: string;
