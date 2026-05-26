@@ -1,0 +1,8 @@
+# Optional project config (overrides defaults; env vars take precedence)
+output_dir: ./output
+requirement_path: ./input/requirement.md
+
+artifacts:
+  - acceptance-criteria
+  - ui-state-matrix
+  # - sprint-backlog   # enable when using: alignx generate --all

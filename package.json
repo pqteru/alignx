@@ -1,0 +1,16 @@
+{
+  "name": "alignx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generate aligned docs from requirement.md with local LM Studio",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "alignx": "node packages/cli/dist/index.js",
+    "dev": "pnpm --filter @alignx/cli dev"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.3.0+sha512.2c403d6594527287672b1f7056343a1f7c3634036a67ffabfcc2b3d7595d843768f8787148d1b57cf7956c90606bbd192857c363af19e96d2d0ec9ec5741d215"
+}

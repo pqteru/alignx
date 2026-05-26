@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.DS_Store
+*.log
+
+# Local input (created by `alignx init`) and generated output
+input/
+
+output/*
+!output/.gitkeep

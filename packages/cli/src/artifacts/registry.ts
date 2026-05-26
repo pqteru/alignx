@@ -1,0 +1,42 @@
+import { join } from "node:path";
+import type { AppConfig, ArtifactType, RequirementModel } from "../types.js";
+import { generateAcceptanceCriteria } from "./acceptance-criteria.js";
+import { generateSprintBacklog } from "./sprint-backlog.js";
+import { generateUiStateMatrix } from "./ui-state-matrix.js";
+
+export interface GenerateResult {
+  type: ArtifactType;
+  path: string;
+  content: string;
+}
+
+type GeneratorFn = (
+  requirement: RequirementModel,
+  config: AppConfig,
+  sourceSha256: string,
+) => Promise<GenerateResult>;
+
+const generators: Record<ArtifactType, GeneratorFn> = {
+  "acceptance-criteria": generateAcceptanceCriteria,
+  "ui-state-matrix": generateUiStateMatrix,
+  "sprint-backlog": generateSprintBacklog,
+};
+
+export function artifactOutputPath(config: AppConfig, type: ArtifactType): string {
+  const filename =
+    type === "acceptance-criteria"
+      ? "acceptance-criteria.md"
+      : type === "ui-state-matrix"
+        ? "ui-state-matrix.md"
+        : "sprint-backlog.md";
+  return join(config.outputDir, filename);
+}
+
+export async function generateArtifact(
+  type: ArtifactType,
+  requirement: RequirementModel,
+  config: AppConfig,
+  sourceSha256: string,
+): Promise<GenerateResult> {
+  return generators[type](requirement, config, sourceSha256);
+}
