@@ -76,8 +76,7 @@ output/
     ├── acceptance-criteria.md
     ├── ui-state-matrix.md
     ├── sprint-backlog.md
-    └── dashboard/
-        └── index.html
+    └── dashboard.html          # 儀表板（左側選單切換各文件）
 ```
 
 `alignx check` 與 `alignx dashboard` **預設使用最新一筆 run**。指定某次產出請加 `--run 20260526_111111`。
