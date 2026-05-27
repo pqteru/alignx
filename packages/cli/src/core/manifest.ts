@@ -4,7 +4,7 @@ import type { AlignxManifest, ArtifactManifestEntry, ArtifactType } from "../typ
 import { sha256, sha256File } from "./hash.js";
 
 export const MANIFEST_FILENAME = ".alignx-manifest.json";
-export const GENERATOR_VERSION = "0.1.0";
+export const GENERATOR_VERSION = "0.2.0";
 
 export function manifestPath(outputDir: string): string {
   return join(outputDir, MANIFEST_FILENAME);

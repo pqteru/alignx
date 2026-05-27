@@ -8,6 +8,7 @@ import type { AppConfig } from "../types.js";
 import { checkDrift } from "../core/drift.js";
 import { artifactTitles, getLabels, resolveLocale } from "../core/locale.js";
 import { ALL_ARTIFACTS } from "../types.js";
+import { buildDashboardStats } from "./stats.js";
 
 export const DASHBOARD_FILENAME = "dashboard.html";
 
@@ -104,6 +105,27 @@ export async function buildDashboard(
   const reqHash = manifest?.requirement.sha256?.slice(0, 12) ?? "—";
   const runId = manifest?.run_id ?? "";
 
+  const docPayload = docs.map((d) => ({
+    id: d.id,
+    title: d.title,
+    status: d.status,
+    statusLabel: statusLabel(d.status, locale),
+    markdown: d.markdown,
+    path: d.path,
+    generatedAt: d.generatedAt,
+  }));
+
+  const stats = buildDashboardStats(
+    locale,
+    docPayload.map((d) => ({
+      id: d.id,
+      title: d.title,
+      markdown: d.markdown,
+      status: d.status,
+    })),
+    { reqStatus },
+  );
+
   const payload = {
     locale,
     labels: {
@@ -111,6 +133,8 @@ export async function buildDashboard(
       requirement: L.requirement,
       hash: L.hash,
       generated: L.generated,
+      statsOverview: L.statsOverview,
+      docMap: L.docMap,
       issues: issues.map((i) => ({ artifact: i.artifact, message: i.message })),
     },
     meta: {
@@ -122,15 +146,8 @@ export async function buildDashboard(
       reqStatus,
       reqStatusLabel: statusLabel(reqStatus, locale),
     },
-    docs: docs.map((d) => ({
-      id: d.id,
-      title: d.title,
-      status: d.status,
-      statusLabel: statusLabel(d.status, locale),
-      markdown: d.markdown,
-      path: d.path,
-      generatedAt: d.generatedAt,
-    })),
+    stats,
+    docs: docPayload,
   };
 
   const dataJson = JSON.stringify(payload).replace(/</g, "\\u003c");
@@ -142,6 +159,7 @@ export async function buildDashboard(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(L.dashboardTitle)}</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
     window.mermaid = mermaid;
@@ -323,6 +341,75 @@ export async function buildDashboard(
       border: 1px dashed var(--border);
       border-radius: 12px;
     }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .kpi .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .kpi .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+    .kpi .hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.35rem; }
+    .kpi.tone-ok .value { color: var(--ok); }
+    .kpi.tone-stale .value { color: var(--stale); }
+    .kpi.tone-accent .value { color: var(--accent); }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+    .chart-card h3 {
+      font-size: 0.85rem;
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .chart-card canvas { max-height: 220px; }
+    .map-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+    .map-card .mermaid { background: #fff; border-radius: 8px; padding: 0.75rem; }
+    .doc-hints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .doc-hint {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.65rem;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border-radius: 999px;
+      color: var(--accent);
+    }
     @media (max-width: 768px) {
       .layout { flex-direction: column; }
       .sidebar {
@@ -366,8 +453,13 @@ export async function buildDashboard(
       return 'badge badge-' + status;
     }
 
+    const CHART_COLORS = ['#5b9cff','#3dd68c','#f5a524','#a78bfa','#f472b6','#38bdf8'];
+
+    let chartInstances = [];
+
     function renderOverview() {
       const m = DATA.meta;
+      const s = DATA.stats;
       let html = '<section class="panel active" id="panel-overview">';
       html += '<div class="req-bar">';
       html += '<strong>' + DATA.labels.requirement + '</strong>';
@@ -382,17 +474,37 @@ export async function buildDashboard(
         });
         html += '</ul>';
       }
-      html += '<p style="color:var(--muted)">' + DATA.meta.subtitle + '</p>';
-      html += '<ul style="color:var(--muted);font-size:0.9rem">';
-      DATA.docs.forEach(d => {
-        html += '<li>' + d.title + ' — ' + d.statusLabel + '</li>';
+      html += '<h2 class="section-title">' + DATA.labels.statsOverview + '</h2>';
+      html += '<div class="kpi-grid">';
+      s.kpis.forEach(k => {
+        html += '<div class="kpi tone-' + k.tone + '">';
+        html += '<div class="value">' + k.value + '</div>';
+        html += '<div class="label">' + k.label + '</div>';
+        if (k.hint) html += '<div class="hint">' + k.hint + '</div>';
+        html += '</div>';
       });
-      html += '</ul></section>';
+      html += '</div>';
+      if (s.charts.length) {
+        html += '<div class="chart-grid">';
+        s.charts.forEach(c => {
+          html += '<div class="chart-card"><h3>' + c.title + '</h3><canvas id="chart-' + c.id + '"></canvas></div>';
+        });
+        html += '</div>';
+      }
+      html += '<h2 class="section-title">' + DATA.labels.docMap + '</h2>';
+      html += '<div class="map-card"><pre class="mermaid" id="overview-mermaid">' + s.overviewMermaid + '</pre></div>';
+      html += '</section>';
       return html;
     }
 
     function renderDocPanel(doc) {
+      const hints = DATA.stats.docHints[doc.id] || [];
       let html = '<section class="panel" id="panel-' + doc.id + '">';
+      if (hints.length) {
+        html += '<div class="doc-hints">';
+        hints.forEach(h => { html += '<span class="doc-hint">' + h + '</span>'; });
+        html += '</div>';
+      }
       html += '<div class="doc-meta">';
       html += DATA.labels.generated + '：' + doc.generatedAt + '<br>';
       html += '<code>' + doc.path + '</code>';
@@ -406,13 +518,51 @@ export async function buildDashboard(
       return html;
     }
 
+    function renderCharts() {
+      if (!window.Chart || !DATA.stats.charts.length) return;
+      chartInstances.forEach(c => c.destroy());
+      chartInstances = [];
+      const gridColor = 'rgba(139,156,179,0.2)';
+      const textColor = '#8b9cb3';
+      DATA.stats.charts.forEach(cfg => {
+        const el = document.getElementById('chart-' + cfg.id);
+        if (!el) return;
+        const colors = cfg.labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+        chartInstances.push(new Chart(el, {
+          type: cfg.type,
+          data: {
+            labels: cfg.labels,
+            datasets: [{
+              data: cfg.values,
+              backgroundColor: colors,
+              borderColor: colors.map(c => c + '99'),
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: cfg.type === 'bar' ? 'top' : 'right',
+                labels: { color: textColor, boxWidth: 12 }
+              }
+            },
+            scales: cfg.type === 'bar' ? {
+              x: { ticks: { color: textColor, maxRotation: 45 }, grid: { color: gridColor } },
+              y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+            } : {}
+          }
+        }));
+      });
+    }
+
     function init() {
       document.title = DATA.meta.title;
       document.getElementById('app-title').textContent = DATA.meta.title;
       document.getElementById('run-id').textContent = DATA.meta.runId || '';
 
       const nav = document.getElementById('nav');
-      const main = document.getElementById('main');
 
       const items = [
         { id: 'overview', title: DATA.labels.overview, status: DATA.meta.reqStatus, statusLabel: DATA.meta.reqStatusLabel },
@@ -421,7 +571,7 @@ export async function buildDashboard(
 
       let mainHtml = renderOverview();
       DATA.docs.forEach(d => { mainHtml += renderDocPanel(d); });
-      main.innerHTML = mainHtml;
+      document.getElementById('main').innerHTML = mainHtml;
 
       items.forEach((item, idx) => {
         const btn = document.createElement('button');
@@ -432,6 +582,8 @@ export async function buildDashboard(
         btn.addEventListener('click', () => switchPanel(item.id, btn));
         nav.appendChild(btn);
       });
+
+      switchPanel('overview', nav.querySelector('.nav-item'));
     }
 
     async function switchPanel(id, btn) {
@@ -446,6 +598,9 @@ export async function buildDashboard(
         try {
           await mermaid.run({ nodes });
         } catch (e) { console.warn('mermaid', e); }
+      }
+      if (id === 'overview') {
+        renderCharts();
       }
     }
 

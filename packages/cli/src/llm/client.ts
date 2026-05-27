@@ -49,7 +49,7 @@ export async function chatJson<T>(
   parse: (raw: unknown) => T,
   options?: { maxRetries?: number },
 ): Promise<{ data: T; model: string }> {
-  const maxRetries = options?.maxRetries ?? 3;
+  const maxRetries = options?.maxRetries ?? 4;
   const model = await resolveModel(config);
   const url = `${config.baseUrl.replace(/\/$/, "")}/chat/completions`;
 

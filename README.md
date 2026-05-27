@@ -63,7 +63,13 @@ input/requirement.md        # 需求單一來源（本機，不納入此工具 r
 output/                     # 產物目錄（git 僅保留 .gitkeep）
 ```
 
-需求範例：`docs/example/requirement.md`
+需求範例：`docs/example/requirement.md`  
+產物品質參考：`docs/example/*.reference.md`
+
+## 產物格式（v0.2）
+
+- **驗收標準**：覆蓋總覽、條目一覽、詳述（含 UI 對照）、建議測試資料、分支流程圖、與 UI 矩陣對照表
+- **UI 狀態矩陣**：總覽、決策表（售／租組合）、狀態機／靜態清單分開、與驗收標準對照
 
 ## 產物輸出
 
@@ -76,7 +82,7 @@ output/
     ├── acceptance-criteria.md
     ├── ui-state-matrix.md
     ├── sprint-backlog.md
-    └── dashboard.html          # 儀表板（左側選單切換各文件）
+    └── dashboard.html          # 儀表板（KPI、圖表、左側選單切換各文件）
 ```
 
 `alignx check` 與 `alignx dashboard` **預設使用最新一筆 run**。指定某次產出請加 `--run 20260526_111111`。

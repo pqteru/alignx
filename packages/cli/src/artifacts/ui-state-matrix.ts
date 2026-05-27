@@ -29,7 +29,10 @@ export async function generateUiStateMatrix(
     (raw) => uiStateMatrixResponseSchema.parse(raw) as UiStateMatrixResponse,
   );
 
-  let content = renderUiStateMatrix(data, { title: requirement.frontmatter.title });
+  let content = renderUiStateMatrix(data, {
+    title: requirement.frontmatter.title,
+    requirementId: requirement.frontmatter.id,
+  });
   content += alignxFooter(sourceSha256, GENERATOR);
 
   const path = artifactOutputPath(config, "ui-state-matrix");
