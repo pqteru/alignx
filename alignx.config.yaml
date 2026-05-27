@@ -5,4 +5,5 @@ requirement_path: ./input/requirement.md
 artifacts:
   - acceptance-criteria
   - ui-state-matrix
+  - observability
   # - sprint-backlog   # enable when using: alignx generate --all

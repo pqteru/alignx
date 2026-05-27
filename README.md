@@ -46,7 +46,7 @@ alignx init && alignx generate --all
 |------|------|
 | `alignx init` | 建立 `input/requirement.md`、`.env`、設定檔 |
 | `alignx doctor` | 測試 LM Studio 連線 |
-| `alignx generate` | 產生產物（預設：驗收標準 + UI 狀態矩陣） |
+| `alignx generate` | 產生產物（預設：驗收標準 + UI 狀態矩陣 + observability） |
 | `alignx generate --all` | 含衝刺待辦在內的全部類型 |
 | `alignx generate -t acceptance-criteria` | 只產生單一類型 |
 | `alignx check` | 檢查需求是否變更或檔案 drift（最新一筆 run） |
@@ -70,6 +70,7 @@ output/                     # 產物目錄（git 僅保留 .gitkeep）
 
 - **驗收標準**：覆蓋總覽、條目一覽、詳述（含 UI 對照）、建議測試資料、分支流程圖、與 UI 矩陣對照表
 - **UI 狀態矩陣**：總覽、決策表（售／租組合）、狀態機／靜態清單分開、與驗收標準對照
+- **Observability 規劃**：關鍵事件埋點、核心指標、告警規則、留存與回饋迴圈
 
 ## 產物輸出
 
@@ -81,6 +82,7 @@ output/
     ├── .alignx-manifest.json
     ├── acceptance-criteria.md
     ├── ui-state-matrix.md
+    ├── observability.md
     ├── sprint-backlog.md
     └── dashboard.html          # 儀表板（KPI、圖表、左側選單切換各文件）
 ```

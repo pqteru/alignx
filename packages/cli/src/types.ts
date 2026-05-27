@@ -1,12 +1,14 @@
 export type ArtifactType =
   | "acceptance-criteria"
   | "ui-state-matrix"
-  | "sprint-backlog";
+  | "sprint-backlog"
+  | "observability";
 
 export const ALL_ARTIFACTS: ArtifactType[] = [
   "acceptance-criteria",
   "ui-state-matrix",
   "sprint-backlog",
+  "observability",
 ];
 
 export interface RequirementFrontmatter {

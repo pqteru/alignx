@@ -169,3 +169,56 @@ Rules:
 Requirement:
 ${summary}`;
 }
+
+export function observabilityPrompt(summary: string): string {
+  return `From the requirement below, produce an observability plan as JSON.
+${localeBlock()}
+Schema:
+{
+  "objective": "觀測目標一句話",
+  "north_star": "可選，北極星指標",
+  "events": [
+    {
+      "name": "event_name_snake_or_dot",
+      "category": "navigation|conversion|quality|retention|feedback",
+      "trigger": "何時觸發",
+      "properties": ["key1", "key2"],
+      "pii_risk": "none|low|medium|high",
+      "sampling": "100% 或 20%",
+      "owner": "team",
+      "related_surface": "surface_id"
+    }
+  ],
+  "metrics": [
+    {
+      "name": "metric_name",
+      "type": "counter|gauge|histogram|ratio",
+      "definition": "定義",
+      "target": "目標值",
+      "dimensions": ["platform", "channel"]
+    }
+  ],
+  "alerts": [
+    {
+      "name": "alert name",
+      "condition": "5m error_rate > 3%",
+      "severity": "info|warning|critical",
+      "action": "oncall + ticket"
+    }
+  ],
+  "dashboards": ["Dashboard 1", "Dashboard 2"],
+  "retention_notes": ["留存多久", "匿名化策略"],
+  "feedback_loop": ["收集", "分析", "迭代"]
+}
+
+Rules (MUST):
+- Cover full funnel where applicable: exposure -> click -> navigation -> success/failure
+- Include events for tracking, review, feedback, retention outcomes
+- Every event must have trigger + properties + pii_risk + sampling
+- Include at least one quality metric and one retention/engagement metric
+- Include concrete alert conditions for critical failures
+- Keep names implementation-friendly and unambiguous
+
+Requirement:
+${summary}`;
+}
