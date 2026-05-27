@@ -202,6 +202,29 @@ export function buildDashboardStats(
     ];
   }
 
+  const specDoc = docs.find((d) => d.id === "ui-state-spec");
+  if (specDoc?.markdown) {
+    const stateCount = (specDoc.markdown.split("## 1. State Space")[1]?.split("## 2.")[0] ?? "")
+      .split("\n")
+      .filter((l) => l.startsWith("| `")).length;
+    const transCount = (specDoc.markdown.split("## 3. Transition Table")[1]?.split("## 4.")[0] ?? "")
+      .split("\n")
+      .filter((l) => l.startsWith("| `")).length;
+    if (stateCount > 0) {
+      kpis.push({
+        id: "spec",
+        label: zh ? "狀態模型" : "State model",
+        value: String(stateCount),
+        hint: zh ? `${transCount} 轉移` : `${transCount} transitions`,
+        tone: "accent",
+      });
+      docHints["ui-state-spec"] = [
+        zh ? `${stateCount} 合法狀態` : `${stateCount} states`,
+        zh ? `${transCount} 轉移列` : `${transCount} transitions`,
+      ];
+    }
+  }
+
   const uiDoc = docs.find((d) => d.id === "ui-state-matrix");
   if (uiDoc?.markdown) {
     const ui = parseUiMatrix(uiDoc.markdown);

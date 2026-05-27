@@ -222,3 +222,140 @@ Rules (MUST):
 Requirement:
 ${summary}`;
 }
+
+/** UI State Architect — state transition system modeling (not generic requirements). */
+export const SYSTEM_UI_STATE_SPEC = (locale = resolveLocale()) =>
+  [
+    "你是 UI State Architect。",
+    "Output ONLY valid JSON. No markdown, no commentary.",
+    llmLanguageRule(locale),
+  ].join(" ");
+
+const UI_STATE_SPEC_ROLE = `你是一個 UI State Architect。
+
+請不要產出一般需求文件。
+請把這個功能建模成「狀態轉移系統」。
+
+輸入：我會提供一個 UI 功能描述。
+
+你要產出以下文件：
+
+1. State Space
+- 列出所有合法狀態
+- 不要用多個 boolean 拼狀態
+- 用 enum / union / sealed class 思考
+- 標示哪些狀態互斥
+
+2. Events / Actions
+- 列出所有會觸發狀態改變的事件
+- 分成 user event、system event、async event
+
+3. Transition Table
+- 用表格表示：
+  current state + event → next state
+- 不允許模糊描述
+- 不合法轉移要標示 ignored / impossible / error
+
+4. Derived UI
+- 說明每個 state 對應畫面怎麼 render
+- UI 只能由 state 推導
+- 不允許 UI 自己保存 business state
+
+5. Side Effects
+- API request、navigation、timer、storage 都要獨立列出
+- side effect 不可直接改 UI
+- side effect 結果必須回到 event/action
+
+6. Invalid States
+- 列出原本可能出現但應該被設計排除的非法狀態
+- 說明如何用 state model 避免
+
+7. State Diagram
+- 用 Mermaid stateDiagram-v2 畫出狀態圖
+
+核心原則：
+- Make invalid states impossible
+- UI = Render(State)
+- State_next = Transition(State_current, Event)
+- 不要用 loading/success/error 這種模板化分類
+- 以狀態空間、事件、轉移、約束來描述`;
+
+export function uiStateSpecPrompt(summary: string): string {
+  return `${UI_STATE_SPEC_ROLE}
+${localeBlock()}
+將上述七個章節的內容輸出為 JSON，結構如下：
+
+Schema:
+{
+  "feature_scope": "此功能在狀態模型中的邊界一句話",
+  "state_space": {
+    "modeling_notes": "如何用 enum/union 建模、為何不用 boolean 組合",
+    "states": [
+      {
+        "id": "HomepageShortcutPanel",
+        "label": "繁中狀態名",
+        "description": "語意說明",
+        "mutual_excludes": ["OtherStateId"]
+      }
+    ]
+  },
+  "events": {
+    "user": [{ "id": "TapSellUpdate", "label": "...", "description": "..." }],
+    "system": [{ "id": "SessionResolved", "label": "...", "description": "..." }],
+    "async": [{ "id": "NavigationCompleted", "label": "...", "description": "..." }]
+  },
+  "transitions": [
+    {
+      "current_state": "StateId",
+      "event": "EventId",
+      "next_state": "NextStateId",
+      "disposition": "allowed",
+      "notes": "可選"
+    },
+    {
+      "current_state": "StateId",
+      "event": "ForbiddenEvent",
+      "disposition": "ignored|impossible|error",
+      "notes": "為何不合法"
+    }
+  ],
+  "derived_ui": [
+    {
+      "state_id": "StateId",
+      "render_summary": "此狀態下畫面如何呈現",
+      "ui_elements": ["可見元件"],
+      "must_not_persist": ["不可在 UI 保存的 business 欄位"]
+    }
+  ],
+  "side_effects": [
+    {
+      "id": "fx_nav_sell",
+      "kind": "navigation|api|timer|storage|other",
+      "on_event": "TapSellUpdate",
+      "description": "導向出售更新排序頁",
+      "emits_event": "NavigationCompleted"
+    }
+  ],
+  "invalid_states": [
+    {
+      "name": "例如：售租按鈕同時顯示但無刊登",
+      "why_illegal": "業務上不可能",
+      "prevention": "用單一 enum 狀態涵蓋四種刊登組合"
+    }
+  ],
+  "state_diagram_mermaid": "stateDiagram-v2\\n  [*] --> Idle\\n  ..."
+}
+
+Rules (MUST):
+- state id / event id 用 PascalCase 或 snake_case，穩定可當程式 enum
+- 涵蓋需求中所有 UI 條件組合；互斥關係寫在 mutual_excludes
+- transitions：每個 (state, event) 至多一列；合法用 disposition=allowed + next_state
+- 禁止用 Loading / Success / Error 當狀態名；用領域語意狀態（如：雙入口可見、導向出售頁中）
+- derived_ui 必須覆蓋 state_space 中每個 state
+- side_effects 的 emits_event 必須出現在 events 區塊
+- state_diagram_mermaid 必須是 stateDiagram-v2，節點名與 state id 一致
+- 若需求有決策表（如售/租組合），用單一狀態 enum 表達，不用多 boolean
+
+UI 功能描述（requirement）：
+${summary}`;
+}

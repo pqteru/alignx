@@ -39,7 +39,7 @@ export async function runGenerate(opts: GenerateOptions): Promise<void> {
   } else if (opts.types?.length) {
     types = opts.types;
   } else {
-    types = ["acceptance-criteria", "ui-state-matrix", "observability"];
+    types = ["acceptance-criteria", "ui-state-matrix", "ui-state-spec", "observability"];
   }
 
   const runId = formatRunId(new Date());

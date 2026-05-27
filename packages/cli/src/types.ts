@@ -1,12 +1,14 @@
 export type ArtifactType =
   | "acceptance-criteria"
   | "ui-state-matrix"
+  | "ui-state-spec"
   | "sprint-backlog"
   | "observability";
 
 export const ALL_ARTIFACTS: ArtifactType[] = [
   "acceptance-criteria",
   "ui-state-matrix",
+  "ui-state-spec",
   "sprint-backlog",
   "observability",
 ];

@@ -33,7 +33,7 @@ program
   .option("-i, --input <path>", "Path to requirement file (default: input/requirement.md)")
   .option(
     "-t, --type <types>",
-    "Comma-separated: acceptance-criteria,ui-state-matrix,observability,sprint-backlog",
+    "Comma-separated: acceptance-criteria,ui-state-matrix,ui-state-spec,observability,sprint-backlog",
   )
   .option("--all", "Generate all artifact types")
   .option("--no-dashboard", "Skip dashboard HTML generation")

@@ -31,12 +31,14 @@ export const artifactTitles: Record<AlignxLocale, Record<ArtifactType, string>> 
   "zh-TW": {
     "acceptance-criteria": "驗收標準",
     "ui-state-matrix": "UI 狀態矩陣",
+    "ui-state-spec": "UI State Spec",
     "sprint-backlog": "衝刺待辦",
     "observability": "Observability 規劃",
   },
   en: {
     "acceptance-criteria": "Acceptance Criteria",
     "ui-state-matrix": "UI State Matrix",
+    "ui-state-spec": "UI State Spec",
     "sprint-backlog": "Sprint Backlog",
     "observability": "Observability Plan",
   },

@@ -58,6 +58,7 @@ requirement_path: ./input/requirement.md
 artifacts:
   - acceptance-criteria
   - ui-state-matrix
+  - ui-state-spec
   - observability
 `;
 
